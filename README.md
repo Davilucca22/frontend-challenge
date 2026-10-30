@@ -260,3 +260,52 @@ Documente os contratos REST e eventos, a política de sessão, o estado do carri
 Disponibilize comandos para desenvolvimento com mocks, build, preview, verificação de tipos, lint, testes Playwright e auditoria Lighthouse.
 
 A entrega deve executar a partir de um checkout limpo, sem depender de serviços privados ou do backend de produção.
+
+## Implementação Kurio
+
+### Executar localmente
+
+Requer Node.js 20 ou superior e npm.
+
+```bash
+npm install
+npm run dev
+```
+
+O MSW é ativado por padrão. O build publicado também usa os mocks para que a demonstração funcione sem um backend privado.
+
+| Comando | Descrição |
+| --- | --- |
+| `npm run dev` | Desenvolvimento com mocks |
+| `npm run build` | Verificação TypeScript e build de produção |
+| `npm run preview` | Servir o build localmente |
+| `npm run typecheck` | Verificação de tipos |
+| `npm run lint` | ESLint |
+| `npm run test:e2e` | Fluxos Chromium desktop e mobile |
+| `npm run audit` | Lighthouse CI desktop (3 medições por rota) |
+| `npm run audit:mobile` | Lighthouse CI mobile (3 medições por rota) |
+
+Copie `.env.example` para `.env.local` se quiser configurar o ambiente. `VITE_MOCKS=false` desativa os mocks e requer uma API compatível com os contratos descritos em [ARCHITECTURE.md](./ARCHITECTURE.md); sem essa API, a aplicação não carrega dados.
+
+### Credenciais e cenários
+
+Conta de demonstração: `comprador@kurio.art` / `kurio123`. Há também o perfil fictício `artista@kurio.art` com a mesma senha. Cadastros guardam apenas um hash demonstrativo da senha; nunca persistem a senha em texto claro.
+
+O seletor **Ambiente de demonstração**, no rodapé, oferece estes cenários:
+
+- **Padrão:** compra confirmada.
+- **Pagamento recusado:** o pedido termina como recusado e o carrinho é preservado.
+- **Timeout após criar pedido:** a primeira resposta falha depois de persistir o pedido; repetir a operação recupera o mesmo pedido pela chave de idempotência.
+- **Sessão expirada:** a próxima chamada protegida invalida a sessão; entrar novamente mantém o carrinho do usuário.
+- **Rede lenta:** catálogo com latência adicional.
+- **Falha de serviço:** catálogo e mutations de favoritos respondem com erro transitório.
+
+`KURIO10` é um cupom de demonstração. O botão **Restaurar dados de demonstração** limpa a persistência local e restaura fixtures e cenários. O reset não apaga as imagens do projeto.
+
+### Deploy
+
+O build gera `dist/`; `vercel.json` configura fallback de rotas para SPA, permitindo acesso direto e refresh. Para deploy, use `npm run build` como comando de build e `dist` como diretório publicado. O worker MSW gerado em `public/mockServiceWorker.js` deve ser publicado junto com o build. A aplicação não envia transações reais.
+
+### Verificações e limitações conhecidas
+
+Os testes Playwright observam os fluxos de compra, catálogo/detalhe e atualização Socket.IO. Os relatórios Lighthouse são gerados localmente nos diretórios ignorados `reports/`; publique a aplicação e valide as medições no ambiente de entrega antes de reportar metas. O binding Socket.IO dos mocks cobre eventos de texto no namespace padrão e não implementa acknowledgements, namespaces customizados ou anexos binários.
