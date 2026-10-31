@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../../com
 
 const nftRepository = new HttpNFTRepository()
 
+// Apresenta a lista de favoritos e seus estados de carregamento, vazio ou erro.
 export function FavoritesModal({ userId, onClose, returnFocusRef }: { userId: string; onClose: () => void; returnFocusRef?: RefObject<HTMLElement | null> }) {
+  // Busca os IDs favoritos e depois consulta os detalhes de cada NFT em paralelo.
   const favoritesQuery = useQuery({
     queryKey: ['favorites', userId],
     queryFn: () => nftRepository.getFavorites(),

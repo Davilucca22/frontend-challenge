@@ -4,6 +4,7 @@ import { forwardRef } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '../../shared/utils/cn'
 
+// Expõe as primitivas de diálogo para compor modais acessíveis e consistentes.
 export const Dialog = DialogPrimitive.Root
 export const DialogTrigger = DialogPrimitive.Trigger
 export const DialogPortal = DialogPrimitive.Portal

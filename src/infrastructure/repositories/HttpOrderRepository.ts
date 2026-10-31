@@ -4,6 +4,7 @@ import type { Wallet } from '../../domain/entities/User'
 import type { OrderRepository } from '../../domain/repositories/OrderRepository'
 import { httpClient } from '../http/axios-client'
 
+// Implementa cotação e operações de pedido, incluindo a chave de idempotência.
 export class HttpOrderRepository implements OrderRepository {
   async quote(items: CartLine[], coupon?: string): Promise<Quote> {
     const { data } = await httpClient.post<Quote>('/quote', { items, coupon })

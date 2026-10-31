@@ -4,6 +4,7 @@ import { forwardRef } from 'react'
 import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '../../shared/utils/cn'
 
+// Compõe um seletor acessível com gatilho, lista rolável e opções.
 export const Select = SelectPrimitive.Root
 export const SelectGroup = SelectPrimitive.Group
 export const SelectValue = SelectPrimitive.Value

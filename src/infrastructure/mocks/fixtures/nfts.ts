@@ -1,6 +1,7 @@
 import type { NFT } from '../../../domain/entities/NFT'
 import { artwork } from '../../../shared/constants/assets'
 
+// Coleção padrão de itens usada para popular o catálogo demonstrativo.
 const collection = 'Kurio Apes'
 
 export const nftFixtures: NFT[] = [

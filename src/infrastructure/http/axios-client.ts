@@ -2,12 +2,14 @@ import axios from 'axios'
 import { ApiError } from '../../domain/errors/ApiError'
 import { appConfig } from '../../app/config/env'
 
+// Configura o cliente HTTP compartilhado usado pelos repositórios.
 export const httpClient = axios.create({
   baseURL: appConfig.apiBaseUrl,
   timeout: 8_000,
   headers: { 'Content-Type': 'application/json' },
 })
 
+// Converte erros Axios em erros de domínio e sinaliza sessões expiradas.
 httpClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {

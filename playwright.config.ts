@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// Define a suíte E2E, navegadores, evidências de falha e servidor de desenvolvimento.
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,

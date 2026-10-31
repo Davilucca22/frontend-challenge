@@ -8,6 +8,7 @@ import type { CartLine } from '../../domain/entities/Cart'
 import { useAuth } from '../providers/AuthProvider'
 import { FavoritesModal } from './FavoritesModal'
 
+// Renderiza navegação responsiva, ações globais e o modal de favoritos.
 export function Header() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export function Header() {
             : pathname === '/wallets'
               ? 'Carteiras'
               : ''
+  // Mantém a quantidade do carrinho sincronizada com o cache de consultas.
   const cartQuery = useQuery({
     queryKey: ['cart'],
     queryFn: async () => (await httpClient.get<{ items: CartLine[] }>('/cart')).data,

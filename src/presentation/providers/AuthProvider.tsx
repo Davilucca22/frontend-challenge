@@ -14,9 +14,11 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 const authRepository = new HttpAuthRepository()
 
+// Mantém sessão e ações de autenticação disponíveis via contexto React.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   useEffect(() => {
+    // Limpa dados privados quando a API sinaliza expiração da sessão.
     const expireSession = () => {
       queryClient.setQueryData(['auth', 'session'], null)
       queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' && query.queryKey[0] !== 'cart' })
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await queryClient.invalidateQueries({ queryKey: ['auth', 'session'] })
     },
   })
+  // Adapta queries e mutations do React Query à interface de autenticação.
   const value = useMemo<AuthContextValue>(() => ({
     user: sessionQuery.data ?? null,
     loading: sessionQuery.isPending,
@@ -65,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// Garante que consumidores usem o contexto dentro do provider correspondente.
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth deve ser usado dentro de AuthProvider.')

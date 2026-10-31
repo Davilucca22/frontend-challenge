@@ -2,6 +2,7 @@ import type { User } from '../../domain/entities/User'
 import type { AuthRepository } from '../../domain/repositories/AuthRepository'
 import { httpClient } from '../http/axios-client'
 
+// Implementa o contrato de autenticação usando os endpoints REST da aplicação.
 export class HttpAuthRepository implements AuthRepository {
   async login(email: string, password: string): Promise<User> {
     const { data } = await httpClient.post<User>('/auth/login', { email, password })

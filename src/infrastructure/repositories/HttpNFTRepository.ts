@@ -2,6 +2,7 @@ import type { NFT, NFTPage, NFTSearch } from '../../domain/entities/NFT'
 import type { NFTRepository } from '../../domain/repositories/NFTRepository'
 import { httpClient } from '../http/axios-client'
 
+// Implementa consultas de catálogo, detalhes e favoritos através da API REST.
 export class HttpNFTRepository implements NFTRepository {
   async list(search: NFTSearch, signal?: AbortSignal): Promise<NFTPage> {
     const { data } = await httpClient.get<NFTPage>('/nfts', { params: search, signal })

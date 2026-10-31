@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+// Valida o fluxo de compra do carrinho visitante até a confirmação do pedido.
 test('preserva itens do visitante e conclui a compra simulada', async ({ page }) => {
   await page.goto('/')
   const cartUpdated = page.waitForResponse((response) =>
@@ -23,6 +24,7 @@ test('preserva itens do visitante e conclui a compra simulada', async ({ page })
   await expect(page.getByRole('heading', { name: 'Seu pedido foi confirmado!' })).toBeVisible({ timeout: 8_000 })
 })
 
+// Confere filtros compartilháveis por URL, carregamento de imagens e rota de detalhe.
 test('filtra catálogo pela URL e abre detalhes diretamente', async ({ page }) => {
   await page.goto('/?category=M%C3%BAsica&network=Solana&sort=price-asc&page=1')
   await expect(page.getByText('Golden Beat #207')).toBeVisible()
@@ -37,6 +39,7 @@ test('filtra catálogo pela URL e abre detalhes diretamente', async ({ page }) =
   await expect(page.getByRole('alert')).toContainText('NFT não encontrado')
 })
 
+// Garante que alterações de preço em tempo real sejam refletidas no carrinho.
 test('atualiza o preço do carrinho pelo cliente Socket.IO', async ({ page }) => {
   await page.goto('/')
   const cartUpdated = page.waitForResponse((response) =>

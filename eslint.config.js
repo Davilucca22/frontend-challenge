@@ -4,6 +4,7 @@ import hooks from 'eslint-plugin-react-hooks'
 import refresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
+// Aplica as regras de JavaScript/TypeScript e os plugins usados pelos componentes React.
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'playwright-report', 'test-results', 'public/mockServiceWorker.js'] },
   js.configs.recommended,

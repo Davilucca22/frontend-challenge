@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+// Ativa cenários controlados da API simulada para testar falhas e estados específicos.
 async function setScenario(page: Page, scenario: string) {
   await expect(page.locator('#root > *').first()).toBeVisible()
   await page.evaluate(async (value) => {
@@ -12,6 +13,7 @@ async function setScenario(page: Page, scenario: string) {
   }, scenario)
 }
 
+// Reutiliza o fluxo de login nos cenários que exigem uma conta autenticada.
 async function signIn(page: Page, redirect = '/cart', email = 'comprador@kurio.art') {
   await page.goto(`/login?redirect=${encodeURIComponent(redirect)}`)
   await page.getByLabel('E-mail').fill(email)
@@ -20,6 +22,7 @@ async function signIn(page: Page, redirect = '/cart', email = 'comprador@kurio.a
   await page.waitForURL(`**${redirect}`)
 }
 
+// Adiciona o NFT usado como item de referência nos testes de carrinho e checkout.
 async function addEmerald(page: Page) {
   await page.goto('/')
   const cartUpdated = page.waitForResponse((response) =>
@@ -29,6 +32,7 @@ async function addEmerald(page: Page) {
   await cartUpdated
 }
 
+// Executa as etapas comuns de revisão e confirmação durante o checkout.
 async function finishCheckout(page: Page) {
   await page.getByRole('link', { name: 'Continuar para pagamento' }).click()
   await expect(page.getByRole('heading', { name: 'Pagamento com carteira' })).toBeVisible()
@@ -36,6 +40,7 @@ async function finishCheckout(page: Page) {
   await page.getByRole('button', { name: 'Confirmar compra' }).click()
 }
 
+// Confere a sincronização dos filtros com a URL e o histórico de navegação.
 test('mantém filtros no histórico e na URL com parâmetros combinados', async ({ page }) => {
   await page.goto('/?category=M%C3%BAsica&network=Solana&sort=price-asc&page=1')
   await expect(page.getByText('Golden Beat #207')).toBeVisible()
@@ -51,6 +56,7 @@ test('mantém filtros no histórico e na URL com parâmetros combinados', async 
   await expect(page.getByText('Golden Beat #207')).toBeVisible()
 })
 
+// Valida as histórias do diário e a navegação até a NFT associada.
 test('Diário de Cunhagem apresenta quatro histórias e abre o NFT relacionado', async ({ page }) => {
   await page.goto('/')
   const diary = page.getByRole('region', { name: 'Diário de Cunhagem' })
@@ -61,6 +67,32 @@ test('Diário de Cunhagem apresenta quatro histórias e abre o NFT relacionado',
   await expect(page.getByRole('heading', { name: 'Emerald Ape #042' })).toBeVisible()
 })
 
+// Confirma que o layout mobile ocupa a viewport sem rolagem horizontal.
+test('layout mobile ocupa a largura toda com fundo marrom', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  const shell = page.locator('#root > *').first()
+  await expect(shell).toBeVisible()
+  const layout = await page.evaluate(() => {
+    const shell = document.querySelector('#root')!.firstElementChild as HTMLElement
+    const rect = shell.getBoundingClientRect()
+    return {
+      left: rect.left,
+      width: rect.width,
+      shellColor: getComputedStyle(shell).backgroundColor,
+      bodyColor: getComputedStyle(document.body).backgroundColor,
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }
+  })
+  expect(layout.left).toBe(0)
+  expect(layout.width).toBe(layout.viewportWidth)
+  expect(layout.shellColor).toBe('rgb(26, 16, 12)')
+  expect(layout.bodyColor).toBe('rgb(26, 16, 12)')
+  expect(layout.documentWidth).toBe(layout.viewportWidth)
+})
+
+// Exercita persistência da sessão, expiração e encerramento de sessão.
 test('login, sessão recuperável, expiração e logout preservam o fluxo', async ({ page }) => {
   await signIn(page, '/profile')
   await expect(page.getByRole('heading', { name: 'Perfil do colecionador' })).toBeVisible()
@@ -78,6 +110,7 @@ test('login, sessão recuperável, expiração e logout preservam o fluxo', asyn
   await page.waitForURL((url) => url.pathname === '/')
 })
 
+// Verifica rollback após erro e persistência do favorito quando a API se recupera.
 test('favoritos revertem uma falha e podem ser salvos após recuperação', async ({ page }) => {
   await signIn(page, '/')
   await page.goto('/')
@@ -93,6 +126,7 @@ test('favoritos revertem uma falha e podem ser salvos após recuperação', asyn
   await expect(page.getByRole('dialog')).toContainText('Emerald Ape #042')
 })
 
+// Confere persistência do carrinho e migração de itens após autenticação.
 test('carrinho persiste, aceita cupom válido e mantém itens após login', async ({ page }) => {
   await addEmerald(page)
   await page.goto('/cart')
@@ -106,6 +140,7 @@ test('carrinho persiste, aceita cupom válido e mantém itens após login', asyn
   await expect(page.locator('.summary-line').filter({ hasText: 'Desconto' })).toContainText('0.119 ETH')
 })
 
+// Garante que uma recusa de pagamento não esvazie o carrinho nem confirme o pedido.
 test('pagamento recusado preserva o carrinho e não apresenta recibo confirmado', async ({ page }) => {
   await addEmerald(page)
   await setScenario(page, 'payment-declined')
@@ -116,6 +151,7 @@ test('pagamento recusado preserva o carrinho e não apresenta recibo confirmado'
   await expect(page.getByText('Emerald Ape #042')).toBeVisible()
 })
 
+// Simula resposta perdida após criar pedido e valida recuperação idempotente.
 test('timeout após criação recupera o mesmo pedido por idempotência', async ({ page }) => {
   await addEmerald(page)
   await setScenario(page, 'timeout-after-order')
@@ -129,6 +165,7 @@ test('timeout após criação recupera o mesmo pedido por idempotência', async 
   await expect(page.getByRole('heading', { name: 'Seu pedido foi confirmado!' })).toBeVisible({ timeout: 10_000 })
 })
 
+// Testa atualização do perfil, envio de avatar, troca de senha e cadastro de carteira.
 test('edita perfil, avatar, senha e carteira', async ({ page }) => {
   await signIn(page, '/profile')
   await page.getByLabel('Nome de exibição *').fill('Davi Colecionador Atualizado')
@@ -153,6 +190,7 @@ test('edita perfil, avatar, senha e carteira', async ({ page }) => {
   await expect(page.getByText('Secundária')).toBeVisible()
 })
 
+// Exige nova revisão dos valores quando ocorre uma alteração de preço no checkout.
 test('preço alterado via Socket.IO exige revisão antes da compra', async ({ page }) => {
   await addEmerald(page)
   await signIn(page, '/checkout')
@@ -168,6 +206,7 @@ test('preço alterado via Socket.IO exige revisão antes da compra', async ({ pa
   await expect(page.getByRole('heading', { name: 'Pagamento em processamento' })).toBeVisible()
 })
 
+// Confirma que eventos duplicados ou antigos não substituem o preço mais recente.
 test('eventos Socket.IO duplicados e antigos não revertem o preço', async ({ page }) => {
   await addEmerald(page)
   await page.goto('/cart')
@@ -181,6 +220,7 @@ test('eventos Socket.IO duplicados e antigos não revertem o preço', async ({ p
   await expect(page.getByText('1.29 ETH').last()).toBeVisible()
 })
 
+// Verifica acessibilidade de foco do diálogo e validação inicial do formulário.
 test('diálogo de favoritos gerencia foco e formulário de conta valida campos', async ({ page }) => {
   await signIn(page, '/')
   await page.goto('/')
@@ -196,6 +236,7 @@ test('diálogo de favoritos gerencia foco e formulário de conta valida campos',
   await expect(page.locator('input[required]').first()).toBeFocused()
 })
 
+// Exercita estados de carregamento, catálogo vazio, erro e recuperação.
 test('skeleton, resposta vazia e falha transitória têm estados e recuperação', async ({ page }) => {
   await page.goto('/')
   await setScenario(page, 'slow')
@@ -213,6 +254,7 @@ test('skeleton, resposta vazia e falha transitória têm estados e recuperação
   await expect(page.getByText('Emerald Ape #042')).toBeVisible()
 })
 
+// Garante recuperação do pedido pendente após reconexão sem duplicar a compra.
 test('pedido pendente é recuperado após desconexão e recarga sem duplicar compra', async ({ page }) => {
   await addEmerald(page)
   await setScenario(page, 'payment-pending')

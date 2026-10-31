@@ -5,6 +5,7 @@ import { useAuth } from '../providers/AuthProvider'
 import { Feedback } from '../components/Feedback'
 import { errorMessage } from '../../shared/utils/format'
 
+// Cria uma conta após confirmar os campos e a correspondência entre as senhas.
 export function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export function RegisterPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
+  // Atualiza um campo sem perder os valores já digitados nos demais.
   const change = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }))
   const submit = async (event: FormEvent) => {
     event.preventDefault()

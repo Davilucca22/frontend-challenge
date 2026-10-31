@@ -1,6 +1,7 @@
 import tailwindcssAnimate from 'tailwindcss-animate'
 
 /** @type {import('tailwindcss').Config} */
+// Define os arquivos monitorados, tokens visuais e animações compartilhadas.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {

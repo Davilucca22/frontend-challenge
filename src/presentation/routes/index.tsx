@@ -2,8 +2,10 @@ import { createRootRoute, createRoute, createRouter, lazyRouteComponent } from '
 import type { NFTSearch } from '../../domain/entities/NFT'
 import { RootLayout, NotFoundPage } from '../layouts/RootLayout'
 
+// Define o layout raiz e converte os parâmetros de busca do catálogo em tipos válidos.
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFoundPage })
 
+// Catálogo: filtra valores inválidos da URL e carrega a página sob demanda.
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
@@ -32,6 +34,7 @@ const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/prof
 const walletsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/wallets', component: lazyRouteComponent(() => import('../pages/WalletsPage'), 'WalletsPage') })
 const orderRoute = createRoute({ getParentRoute: () => rootRoute, path: '/orders/$orderId', component: lazyRouteComponent(() => import('../pages/OrderPage'), 'OrderPage') })
 
+// Registra todas as páginas como filhas do layout compartilhado.
 const routeTree = rootRoute.addChildren([homeRoute, nftRoute, cartRoute, checkoutRoute, loginRoute, registerRoute, profileRoute, walletsRoute, orderRoute])
 
 export const router = createRouter({ routeTree, defaultPreload: 'intent', scrollRestoration: true })

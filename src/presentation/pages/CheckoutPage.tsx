@@ -15,8 +15,10 @@ import { errorMessage, formatEth } from '../../shared/utils/format'
 
 const orderRepository = new HttpOrderRepository()
 const createOrder = new CreateOrder(orderRepository)
+// Compara os campos relevantes da cotação para detectar alterações de preço/estoque.
 const quoteSignature = (quote: Quote) => [quote.subtotalEth, quote.discountEth, quote.networkFeeEth, quote.totalEth, quote.version].join('|')
 
+// Coleta dados do comprador e confirma a compra após validar carteira e cotação.
 function CheckoutContent() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -39,6 +41,7 @@ function CheckoutContent() {
     enabled: Boolean(cartQuery.data?.items.length),
     retry: false,
   })
+  // Escolhe a carteira explicitamente selecionada, a principal ou a primeira disponível.
   const quote = quoteQuery.data
   const wallets = walletsQuery.data ?? []
   const selectedWallet = wallets.find((wallet) => wallet.id === selectedWalletId) ?? wallets.find((wallet) => wallet.primary) ?? wallets[0]
@@ -69,6 +72,7 @@ function CheckoutContent() {
       setFeedback('Confira os valores atualizados e confirme novamente.')
       return
     }
+    // Busca novamente o preço antes de criar o pedido para evitar confirmar valores vencidos.
     setProcessing(true)
     try {
       const freshQuote = await orderRepository.quote(cartQuery.data.items, coupon || undefined)
@@ -78,6 +82,7 @@ function CheckoutContent() {
         setFeedback('O preço, disponibilidade ou taxas mudaram. Confira os novos valores e confirme novamente.')
         return
       }
+      // Reutiliza a chave em tentativas iguais para que uma repetição não duplique o pedido.
       const cartFingerprint = JSON.stringify({ items: cartQuery.data.items, wallet: selectedWallet.id, coupon, customer })
       if (!keyRef.current || keyRef.current.fingerprint !== cartFingerprint) {
         const saved = sessionStorage.getItem('kurio.order.attempt')

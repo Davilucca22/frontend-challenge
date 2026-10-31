@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { AuthProvider } from './AuthProvider'
 import { RealtimeProvider } from './RealtimeProvider'
 
+// Compartilha cache de consultas, sessão e atualizações em tempo real na aplicação.
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {

@@ -2,8 +2,10 @@ import type { CartLine, Quote } from './Cart'
 import type { NFT } from './NFT'
 import type { Wallet } from './User'
 
+// Estados possíveis durante o processamento demonstrativo de uma compra.
 export type OrderStatus = 'pending' | 'confirmed' | 'declined'
 
+// Pedido com dados do comprador, itens, cotação e carteira selecionada.
 export interface Order {
   id: string
   userId: string
@@ -17,6 +19,7 @@ export interface Order {
   version: number
 }
 
+// Evento de atualização enviado quando o status do pedido muda.
 export interface OrderEvent {
   eventId: string
   resourceId: string

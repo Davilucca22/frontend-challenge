@@ -10,6 +10,7 @@ import { Feedback } from '../components/Feedback'
 import { RequireAuth } from '../components/RequireAuth'
 import { useAuth } from '../providers/AuthProvider'
 
+// Consulta o pedido e acompanha sua mudança de status até um resultado final.
 function OrderContent() {
   const { orderId } = useParams({ from: '/orders/$orderId' })
   const { user } = useAuth()
@@ -17,6 +18,7 @@ function OrderContent() {
   const eventVersion = useRef(0)
   const orderQuery = useQuery({ queryKey: ['order', user?.id, orderId], queryFn: async () => (await httpClient.get<Order>(`/orders/${orderId}`)).data, refetchInterval: (query) => query.state.data?.status === 'pending' ? 3_000 : false })
   useEffect(() => {
+    // Inscreve-se no pedido e invalida o cache apenas para eventos mais recentes.
     const socket = createMarketplaceSocket()
     const subscribe = () => socket.emit('subscribe', 'order', orderId)
     const update = (event: { resourceId: string; version: number }) => {

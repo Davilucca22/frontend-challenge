@@ -13,6 +13,7 @@ import { errorMessage } from '../../shared/utils/format'
 
 const emptyWallet: Omit<Wallet, 'id'> = { name: '', alias: '', address: '', network: 'Ethereum', type: 'MetaMask', email: '', ens: '', primary: false }
 
+// Lista carteiras salvas e oferece formulário de criação e edição.
 function WalletsContent() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -21,6 +22,7 @@ function WalletsContent() {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const walletsQuery = useQuery({ queryKey: ['wallets', user?.id], queryFn: async () => (await httpClient.get<Wallet[]>('/wallets')).data })
+  // Usa o mesmo endpoint para salvar carteiras novas ou substituir uma existente.
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = { ...form, email: form.email || user?.email || '' }
@@ -39,6 +41,7 @@ function WalletsContent() {
   })
   const submit = (event: FormEvent) => { event.preventDefault(); saveMutation.mutate() }
   const selectEdit = (wallet: Wallet) => {
+    // Preenche o formulário com a carteira escolhida e leva o formulário à vista.
     setEditing(wallet)
     setForm({ name: wallet.name, alias: wallet.alias, address: wallet.address, network: wallet.network, type: wallet.type, email: wallet.email, ens: wallet.ens, primary: wallet.primary })
     window.scrollTo({ top: 0, behavior: 'smooth' })

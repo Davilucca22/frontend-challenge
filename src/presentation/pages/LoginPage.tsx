@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 
+// Autentica o usuário e retorna ao destino interno solicitado anteriormente.
 export function LoginPage() {
   const { login } = useAuth()
   const search = useSearch({ from: '/login' })
@@ -24,6 +25,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login(email, password)
+      // Aceita apenas caminhos locais para manter o redirecionamento dentro do site.
       const redirect = search.redirect.startsWith('/') ? search.redirect : '/'
       router.history.push(redirect)
     } catch (reason) {

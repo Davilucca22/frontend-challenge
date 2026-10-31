@@ -1,5 +1,6 @@
 const PREFIX = 'kurio.'
 
+// Encapsula leitura e escrita JSON no localStorage sob um prefixo único.
 export const storage = {
   get<T>(key: string, fallback: T): T {
     try {

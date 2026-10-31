@@ -3,6 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '../../shared/utils/cn'
 
+// Centraliza aparência e tamanhos das variações disponíveis de botão.
 const buttonVariants = cva(
   'inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-light focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50',
   {
@@ -26,6 +27,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, Va
   asChild?: boolean
 }
 
+// Renderiza um botão nativo ou transfere suas propriedades para um filho.
 export function Button({ asChild = false, className, size, variant, ...props }: ButtonProps) {
   const Component = asChild ? Slot : 'button'
   return <Component className={cn(buttonVariants({ className, size, variant }))} {...props} />

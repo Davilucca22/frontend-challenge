@@ -3,10 +3,12 @@ import type { Order } from '../../../domain/entities/Order'
 import type { Wallet } from '../../../domain/entities/User'
 import type { OrderRepository } from '../../../domain/repositories/OrderRepository'
 
+// Valida a compra e delega a persistência idempotente ao repositório.
 export class CreateOrder {
   constructor(private readonly repository: OrderRepository) {}
 
   execute(items: CartLine[], wallet: Wallet, customer: Order['customer'], quote: Quote, coupon: string | undefined, idempotencyKey: string): Promise<Order> {
+    // Rejeita carrinho vazio, chave ausente ou dados de comprador inválidos.
     if (items.length === 0) return Promise.reject(new Error('O carrinho está vazio.'))
     if (!idempotencyKey) return Promise.reject(new Error('A chave da compra é obrigatória.'))
     if (!customer.name.trim() || !customer.email.includes('@')) return Promise.reject(new Error('Informe os dados válidos do colecionador.'))

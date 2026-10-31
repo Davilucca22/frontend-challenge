@@ -15,6 +15,7 @@ import { NFTCard } from '../components/NFTCard'
 
 const nftRepository = new HttpNFTRepository()
 const categories = ['Arte digital', 'Fotografia', 'Música', 'Arte 3D', 'Colecionáveis']
+// Conteúdos editoriais que conectam as histórias do marketplace às NFTs reais.
 const mintingStories = [
   {
     id: 'ivory-baron-088',
@@ -57,6 +58,7 @@ export function HomePage() {
   const { user } = useAuth()
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [draft, setDraft] = useState(search.q ?? '')
+  // Mantém catálogo e favoritos em queries separadas para refletir filtros e conta.
   const catalogQuery = useQuery({
     queryKey: ['nfts', search],
     queryFn: ({ signal }) => nftRepository.list(search, signal),
@@ -80,6 +82,7 @@ export function HomePage() {
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] }),
   })
+  // Atualiza o carrinho após incluir um item pelo cartão de catálogo.
   const addMutation = useMutation({
     mutationFn: (nftId: string) => httpClient.put(`/cart/items/${nftId}`, { quantity: 1 }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['cart'] }),
@@ -93,10 +96,12 @@ export function HomePage() {
     event.preventDefault()
     updateSearch({ q: draft.trim() || undefined, page: 1 })
   }
+  // Usa os primeiros resultados atuais como destaques sem fazer uma segunda busca.
   const highlighted = useMemo(() => catalogQuery.data?.items.slice(0, 3) ?? [], [catalogQuery.data])
 
   return (
     <main>
+      {/* Busca compacta e filtros para navegação em telas estreitas. */}
       <div className={"[display:none] max-[640px]:[display:flex] max-[640px]:[width:calc(100%_-_36px)] max-[640px]:[align-items:center] max-[640px]:[gap:8px] max-[640px]:[margin:42px_auto_0] [width:min(var(--content),_calc(100%_-_64px))] [margin-inline:auto] max-[900px]:[width:calc(100%_-_42px)] max-[640px]:[width:calc(100%_-_36px)] mobile-search-row page-shell"}>
         <form className={"max-[640px]:[min-width:0] max-[640px]:[height:37px] max-[640px]:[display:flex] max-[640px]:[flex:1] max-[640px]:[align-items:center] max-[640px]:[gap:8px] max-[640px]:[padding:0_11px] max-[640px]:[color:var(--accent-light)] max-[640px]:[background:#261810] max-[640px]:[border:1px_solid_#382418] max-[640px]:[border-radius:10px] max-[640px]:[&_input]:[min-height:32px] max-[640px]:[&_input]:[padding:0] max-[640px]:[&_input]:[border:0] max-[640px]:[&_input]:[outline:0] max-[640px]:[&_input]:[background:transparent] max-[640px]:[&_input]:[font-size:14px] max-[640px]:[&_input:focus-visible]:[outline:0] mobile-search-form"} onSubmit={submitSearch}>
           <label className={"[position:absolute] [width:1px] [height:1px] [padding:0] [margin:-1px] [overflow:hidden] [clip:rect(0,_0,_0,_0)] [white-space:nowrap] [border:0] sr-only"} htmlFor="mobile-catalog-search">Buscar por NFT ou coleção</label>
@@ -105,6 +110,7 @@ export function HomePage() {
         </form>
         <button className={"max-[640px]:[width:37px] max-[640px]:[height:37px] max-[640px]:[display:grid] max-[640px]:[place-items:center] max-[640px]:[border:1px_solid_#503522] max-[640px]:[border-radius:10px] max-[640px]:[color:#1a100c] max-[640px]:[background:var(--accent)] mobile-filter-button"} type="button" aria-label="Abrir filtros" onClick={() => setMobileFiltersOpen((open) => !open)}><SlidersHorizontal size={15} /></button>
       </div>
+      {/* Hero com chamada principal e imagem responsiva de destaque. */}
       <section className={"[min-height:400px] [margin-top:30px] [padding:44px_7%] [display:grid] [grid-template-columns:1.1fr_.9fr] [gap:50px] [align-items:center] [border-radius:10px] [background:radial-gradient(ellipse_at_70%_55%,_#54321c_0,_#291a12_47%,_#21150f_100%)] [overflow:hidden] [&_h1]:[margin:13px_0] [&_h1]:[max-width:580px] [&_h1]:[font-size:clamp(28px,_4vw,_48px)] [&_h1]:[line-height:1.24] max-[640px]:[position:relative] max-[640px]:[width:calc(100%_-_36px)] max-[640px]:[min-height:0] max-[640px]:[height:190px] max-[640px]:[margin-top:12px] max-[640px]:[padding:16px_12px] max-[640px]:[grid-template-columns:minmax(0,_1fr)_104px] max-[640px]:[gap:8px] max-[640px]:[border-radius:22px] max-[640px]:[background:radial-gradient(circle_at_72%_45%,_#70492e_0,_#3c271b_45%,_#281912_100%)] max-[640px]:[&_h1]:[margin:4px_0_6px] max-[640px]:[&_h1]:[font-size:14px] max-[640px]:[&_h1]:[line-height:1.35] max-[640px]:[&_h1]:[letter-spacing:0] [width:min(var(--content),_calc(100%_-_64px))] [margin-inline:auto] max-[900px]:[width:calc(100%_-_42px)] max-[640px]:[width:calc(100%_-_36px)] hero page-shell"}>
         <div className={"[position:relative] [z-index:1] [&_p]:[max-width:430px] [&_p]:[margin-bottom:25px] [&_p]:[color:#c4a98b] [&_p]:[font-size:14px] [&_p]:[font-weight:500] max-[640px]:[align-self:start] max-[640px]:[&_.eyebrow]:[font-size:8px] max-[640px]:[&_.eyebrow]:[letter-spacing:.03em] max-[640px]:[&_.eyebrow]:[text-transform:none] max-[640px]:[&_p]:[max-width:160px] max-[640px]:[&_p]:[margin-bottom:2px] max-[640px]:[&_p]:[line-height:1.35] max-[640px]:[&_.button]:[min-height:18px] max-[640px]:[&_.button]:[padding:0] max-[640px]:[&_.button]:[color:var(--accent-light)] max-[640px]:[&_.button]:[background:transparent] max-[640px]:[&_.button]:[border:0] max-[640px]:[&_.button]:[font-size:15px] max-[640px]:[&_.button]:[text-transform:uppercase] max-[640px]:[&_.button_svg]:[width:11px] hero-copy"}>
           <span className={"[color:var(--accent-light)] [font-size:10px] [letter-spacing:.17em] [text-transform:uppercase] eyebrow"}>Bem-vindo à Kurio</span>

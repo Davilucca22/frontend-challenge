@@ -1,5 +1,7 @@
+// Formata preços e datas para exibição e calcula valores sem imprecisão decimal.
 export const formatEth = (value: string): string => `${value} ETH`
 export const multiplyEth = (value: string, quantity: number): string => {
+  // Converte ETH em unidades inteiras de 18 casas antes da multiplicação.
   const [whole, fraction = ''] = value.split('.')
   const unit = 1_000_000_000_000_000_000n
   const result = (BigInt(whole) * unit + BigInt(fraction.padEnd(18, '0').slice(0, 18))) * BigInt(quantity)

@@ -17,6 +17,7 @@ import {
   saveDatabase,
 } from '../../persistence/database'
 
+// Mantém as assinaturas Socket.IO simuladas para distribuir eventos aos clientes interessados.
 type MockSocket = ReturnType<typeof toSocketIo>
 const socketSubscriptions = new Map<MockSocket, Set<string>>()
 const socketLink = ws.link(appConfig.socketPath)
@@ -27,6 +28,7 @@ const broadcast = (event: string, payload: unknown, subscription: string) => {
   }
 }
 
+// Finaliza pedidos pendentes e atualiza estoque/carrinho se o pagamento for confirmado.
 const confirmOrder = (orderId: string) => {
   setTimeout(() => {
     const db = getDatabase()
@@ -54,6 +56,7 @@ const confirmOrder = (orderId: string) => {
   }, getDatabase().scenario === 'payment-pending' ? 10_000 : 900)
 }
 
+// Altera preço e disponibilidade de uma NFT para simular atualizações ao vivo.
 const changeNftPrice = (nftId: string) => {
   const nft = getDatabase().nfts.find((item) => item.id === nftId)
   if (!nft) return null
@@ -87,6 +90,7 @@ const socketHandlers = [socketLink.addEventListener('connection', (connection) =
   socket.rawClient.addEventListener('close', () => socketSubscriptions.delete(socket))
 })]
 
+// Uniformiza o formato dos erros JSON devolvidos pelos handlers REST.
 const errorResponse = (status: number, message: string, code: string) =>
   HttpResponse.json({ message, code }, { status })
 
@@ -101,6 +105,7 @@ const userRequired = () => {
   return user ? { user, db } : null
 }
 
+// Combina o carrinho visitante com o carrinho da conta sem exceder o estoque.
 const preserveGuestCart = (userId: string) => {
   const db = getDatabase()
   const guest = db.carts.guest ?? []

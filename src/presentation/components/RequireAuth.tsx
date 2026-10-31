@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { useAuth } from '../providers/AuthProvider'
 
+// Protege conteúdo privado, indicando carregamento ou encaminhando ao login.
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <main className={"[width:min(var(--content),_calc(100%_-_64px))] [margin-inline:auto] max-[900px]:[width:calc(100%_-_42px)] max-[640px]:[width:calc(100%_-_36px)] page-shell"}><p className={"[color:var(--muted)] muted"}>Verificando sessão...</p></main>

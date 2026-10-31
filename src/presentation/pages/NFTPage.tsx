@@ -12,6 +12,7 @@ import { Skeleton } from '../components/Loading'
 
 const repository = new HttpNFTRepository()
 
+// Apresenta detalhes de uma NFT e permite favoritar ou adicioná-la ao carrinho.
 export function NFTPage() {
   const { nftId } = useParams({ from: '/nft/$nftId' })
   const queryClient = useQueryClient()
@@ -19,10 +20,12 @@ export function NFTPage() {
   const { user } = useAuth()
   const [quantity, setQuantity] = useState(1)
   const [message, setMessage] = useState('')
+  // Carrega a NFT e os favoritos da conta para renderizar as ações corretas.
   const nftQuery = useQuery({ queryKey: ['nft', nftId], queryFn: ({ signal }) => repository.getById(nftId, signal) })
   const favoriteQuery = useQuery({ queryKey: ['favorites', user?.id], queryFn: () => repository.getFavorites(), enabled: Boolean(user), retry: false })
   const favoriteMutation = useMutation({
     mutationFn: () => repository.setFavorite(nftId, !favoriteQuery.data?.includes(nftId)),
+    // Atualiza a interface imediatamente e restaura o estado anterior se houver erro.
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['favorites', user?.id] })
       const previous = queryClient.getQueryData<string[]>(['favorites', user?.id]) ?? []
@@ -34,6 +37,7 @@ export function NFTPage() {
   })
   const toggleFavorite = favoriteMutation.mutate
   useEffect(() => {
+    // Recebe o comando do coração no cabeçalho mobile para alternar este favorito.
     const handleFavoriteToggle = () => {
       if (user) toggleFavorite()
     }

@@ -1,6 +1,7 @@
 import { Radio } from 'lucide-react'
 import { useRealtime } from '../providers/RealtimeProvider'
 
+// Exibe avisos de alteração e o estado da conexão de atualizações ao vivo.
 export function RealtimeNotice() {
   const { notice, connected } = useRealtime()
   return (

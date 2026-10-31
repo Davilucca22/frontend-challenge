@@ -11,6 +11,7 @@ interface RealtimeContextValue {
 
 const RealtimeContext = createContext<RealtimeContextValue | null>(null)
 
+// Sincroniza atualizações do socket com o cache e fornece avisos às páginas.
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [connected, setConnected] = useState(false)
@@ -29,6 +30,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     }
     const onDisconnect = () => setConnected(false)
     const onNFTUpdated = (event: NFTUpdatedEvent) => {
+      // Descarta eventos atrasados para não substituir dados por versões antigas.
       const current = queryClient.getQueryData<NFT>(['nft', event.resourceId])
       const lastVersion = Math.max(eventVersions.current.get(event.resourceId) ?? 0, current?.version ?? 0)
       if (event.version <= lastVersion) return
@@ -61,6 +63,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>
 }
 
+// Expõe o estado da conexão e a ação de simulação aos componentes consumidores.
 export function useRealtime(): RealtimeContextValue {
   const context = useContext(RealtimeContext)
   if (!context) throw new Error('useRealtime deve ser usado dentro de RealtimeProvider.')

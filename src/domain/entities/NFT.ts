@@ -1,3 +1,4 @@
+// Modelo de domínio de uma peça digital disponível no catálogo.
 export interface NFT {
   id: string
   name: string
@@ -16,6 +17,7 @@ export interface NFT {
   version: number
 }
 
+// Parâmetros opcionais utilizados para filtrar, ordenar e paginar o catálogo.
 export interface NFTSearch {
   q?: string
   category?: string
@@ -26,6 +28,7 @@ export interface NFTSearch {
   page?: number
 }
 
+// Resultado paginado retornado pela busca de NFTs.
 export interface NFTPage {
   items: NFT[]
   page: number

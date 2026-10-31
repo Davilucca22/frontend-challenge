@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens globais e preferências tipográficas usadas pela interface. */
 :root {
   font-family: "Courier New", Courier, monospace;
   color: #f0e9df;
@@ -24,6 +25,7 @@
 }
 
 @layer base {
+  /* Normaliza dimensões e estilos nativos que precisam permanecer consistentes. */
   * {
     box-sizing: border-box;
   }
@@ -138,6 +140,7 @@
   }
 }
 
+/* Ajustes globais para a composição de telas em dispositivos estreitos. */
 @media (max-width: 640px) {
   :root {
     --bg: #1a100c;
@@ -148,11 +151,12 @@
 
   body {
     min-height: 100dvh;
-    background: #202020;
+    background: #1a100c;
     font-size: 14px;
   }
 }
 
+/* Efeito de brilho usado por elementos de carregamento. */
 @keyframes shimmer {
   to {
     background-position: -220% 0;

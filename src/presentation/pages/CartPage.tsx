@@ -14,11 +14,13 @@ import { Skeleton } from '../components/Loading'
 
 const orderRepository = new HttpOrderRepository()
 
+// Mostra os itens do carrinho, permite ajustar quantidades e acompanha a cotação.
 function CartContent() {
   const queryClient = useQueryClient()
   const [couponInput, setCouponInput] = useState(() => sessionStorage.getItem('kurio.checkout.coupon') ?? '')
   const [coupon, setCoupon] = useState(() => sessionStorage.getItem('kurio.checkout.coupon') ?? '')
   const { triggerPriceChange } = useRealtime()
+  // Carrega o carrinho e busca em paralelo detalhes e valores de cada item.
   const cartQuery = useQuery({ queryKey: ['cart'], queryFn: async () => (await httpClient.get<{ items: CartLine[] }>('/cart')).data })
   const items = cartQuery.data?.items ?? []
   const nftQueries = useQueries({
@@ -30,6 +32,7 @@ function CartContent() {
     enabled: items.length > 0,
     retry: false,
   })
+  // Invalida a cotação sempre que o usuário altera ou remove itens.
   const cartMutation = useMutation({
     mutationFn: ({ nftId, quantity }: { nftId: string; quantity: number }) => httpClient.put(`/cart/items/${nftId}`, { quantity }),
     onSuccess: async () => {

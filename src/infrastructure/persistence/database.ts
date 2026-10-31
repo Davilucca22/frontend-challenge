@@ -6,10 +6,12 @@ import { nftFixtures } from '../mocks/fixtures/nfts'
 import type { MockScenario } from '../mocks/database/scenarios'
 import { storage } from './storage'
 
+// Acrescenta o hash demonstrativo usado pelas contas sem expô-lo na API pública.
 export interface UserRecord extends User {
   passwordHash: string
 }
 
+// Define todo o estado persistido pela API simulada no navegador.
 export interface MockDatabase {
   users: UserRecord[]
   currentUserId: string | null
@@ -23,6 +25,7 @@ export interface MockDatabase {
   scenario: MockScenario
 }
 
+// Hash simples apenas para a demonstração; não substitui um KDF de produção.
 const passwordHash = (value: string): string => {
   let hash = 2166136261
   for (let index = 0; index < value.length; index += 1) {
@@ -32,6 +35,7 @@ const passwordHash = (value: string): string => {
   return `demo-${(hash >>> 0).toString(16)}`
 }
 
+// Cria o estado inicial com usuários de teste, fixtures e valores padrão.
 const defaultDatabase = (): MockDatabase => ({
   users: [
     { id: 'user-demo', name: 'Davi Colecionador', username: 'davi-kurio', email: 'comprador@kurio.art', walletAlias: 'Reserva', ensName: 'novak.kurio.eth', avatar: '', passwordHash: passwordHash('kurio123') },
@@ -50,6 +54,7 @@ const defaultDatabase = (): MockDatabase => ({
 
 let database = storage.get<MockDatabase>('database', defaultDatabase())
 const fixtureImages = new Map(nftFixtures.map((nft) => [nft.id, nft.image]))
+// Atualiza imagens antigas após mudanças nas fixtures sem apagar os outros dados.
 const outdatedNFTs = database.nfts.filter((nft) => fixtureImages.has(nft.id) && fixtureImages.get(nft.id) !== nft.image)
 if (outdatedNFTs.length > 0) {
   database.nfts = database.nfts.map((nft) => {
@@ -71,6 +76,7 @@ export const replaceDatabase = (next: MockDatabase): void => {
   saveDatabase()
 }
 export const hashPassword = passwordHash
+// Remove o hash antes de devolver os dados de conta às telas.
 export const publicUser = (record: UserRecord): User => {
   const user = { ...record }
   delete (user as Partial<UserRecord>).passwordHash
@@ -78,6 +84,7 @@ export const publicUser = (record: UserRecord): User => {
 }
 export const currentOwnerId = (): string => database.currentUserId ?? 'guest'
 export const cartForCurrentOwner = (): CartLine[] => database.carts[currentOwnerId()] ?? []
+// Calcula valores em unidades inteiras de ETH para evitar erros de ponto flutuante.
 export const quoteLines = (lines: CartLine[], coupon?: string): Quote => {
   const unit = 1_000_000_000_000_000_000n
   const subtotalMicro = lines.reduce((sum, line) => {

@@ -10,6 +10,7 @@ import { Feedback } from '../components/Feedback'
 import { FavoritesModal } from '../components/FavoritesModal'
 import { errorMessage } from '../../shared/utils/format'
 
+// Gerencia leitura e edição do perfil, avatar, senha e favoritos.
 function ProfileContent() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -41,6 +42,7 @@ function ProfileContent() {
     },
     onError: (reason) => { setError(errorMessage(reason)); setNotice('') },
   })
+  // Exibe estados de leitura antes de habilitar o formulário com os dados do perfil.
   if (profileQuery.isPending) return <p>Carregando perfil...</p>
   if (profileQuery.isError) return <Feedback>{errorMessage(profileQuery.error)}</Feedback>
   const profile = profileQuery.data
@@ -49,6 +51,7 @@ function ProfileContent() {
   const submitProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
+    // A troca de senha só é enviada quando os três campos estão completos e conferem.
     const hasPasswordChange = Object.values(passwords).some(Boolean)
     if (hasPasswordChange && (!passwords.currentPassword || !passwords.newPassword || !passwords.confirm)) {
       setError('Preencha os três campos para alterar a senha.')
@@ -77,6 +80,7 @@ function ProfileContent() {
   const chooseAvatar = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+    // Restringe a seleção a imagens pequenas antes de convertê-las para pré-visualização.
     if (!file.type.startsWith('image/') || file.size > 2_000_000) {
       setError('Selecione uma imagem de até 2 MB.')
       return

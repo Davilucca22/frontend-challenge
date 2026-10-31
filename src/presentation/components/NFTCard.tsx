@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import type { NFT } from '../../domain/entities/NFT'
 import { formatEth } from '../../shared/utils/format'
 
+// Apresenta a arte e os metadados de uma NFT com ações opcionais.
 export function NFTCard({ nft, favorite, onFavorite, onAddToCart }: { nft: NFT; favorite?: boolean; onFavorite?: () => void; onAddToCart?: () => void }) {
   return (
     <article className={"[min-width:0] max-[640px]:[min-width:0] max-[640px]:[padding:4px] max-[640px]:[border-radius:16px] max-[640px]:[background:#241610] max-[640px]:[&:nth-child(even)]:[margin-top:15px] nft-card"}>

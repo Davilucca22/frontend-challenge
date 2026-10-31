@@ -5,12 +5,14 @@ import { httpClient } from '../../infrastructure/http/axios-client'
 import { Feedback } from '../components/Feedback'
 import type { MockScenario } from '../../infrastructure/mocks/database/scenarios'
 
+// Exibe informações institucionais e controles do ambiente de demonstração.
 export function Footer() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const transactionalPage = pathname === '/cart' || pathname === '/checkout'
   const [scenario, setScenario] = useState<MockScenario>('standard')
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
+  // Altera o cenário da API simulada e informa o resultado ao usuário.
   const updateScenario = async (value: MockScenario) => {
     setScenario(value)
     setError('')
@@ -21,6 +23,7 @@ export function Footer() {
       setError(reason instanceof Error ? reason.message : 'Falha ao alterar o cenário.')
     }
   }
+  // Restaura os dados de demonstração ao estado inicial.
   const reset = async () => {
     try {
       await httpClient.post('/mock/reset')

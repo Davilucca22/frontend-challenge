@@ -1,3 +1,4 @@
+// Dados públicos e editáveis de uma conta de colecionador.
 export interface User {
   id: string
   name: string
@@ -8,6 +9,7 @@ export interface User {
   avatar: string
 }
 
+// Carteira associada à conta para simular opções de pagamento.
 export interface Wallet {
   id: string
   name: string
