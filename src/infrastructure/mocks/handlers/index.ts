@@ -1,5 +1,7 @@
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse, delay, ws } from 'msw'
+import { toSocketIo } from '@mswjs/socket.io-binding'
 import { appConfig } from '../../../app/config/env'
+import type { MockScenario } from '../database/scenarios'
 import type { CartLine } from '../../../domain/entities/Cart'
 import type { NFTSearch } from '../../../domain/entities/NFT'
 import type { Order } from '../../../domain/entities/Order'
@@ -15,58 +17,14 @@ import {
   saveDatabase,
 } from '../../persistence/database'
 
-interface PollingSession {
-  id: string
-  packets: string[]
-  subscriptions: Set<string>
-  connected: boolean
-  heartbeat?: ReturnType<typeof setInterval>
-  pendingPoll: { finish: (packet: string) => void } | null
-}
-
-const pollingSessions = new Map<string, PollingSession>()
-const socketResponse = (packet: string, status = 200) =>
-  HttpResponse.text(packet, { status, headers: { 'Content-Type': 'text/plain; charset=UTF-8', 'Cache-Control': 'no-store' } })
-
-const queueSocketPacket = (session: PollingSession, packet: string) => {
-  if (session.pendingPoll) {
-    session.pendingPoll.finish(packet)
-    return
-  }
-  session.packets.push(packet)
-}
+type MockSocket = ReturnType<typeof toSocketIo>
+const socketSubscriptions = new Map<MockSocket, Set<string>>()
+const socketLink = ws.link(appConfig.socketPath)
 
 const broadcast = (event: string, payload: unknown, subscription: string) => {
-  const packet = `42${JSON.stringify([event, payload])}`
-  for (const session of pollingSessions.values()) {
-    if (session.connected && session.subscriptions.has(subscription)) queueSocketPacket(session, packet)
+  for (const [socket, subscriptions] of socketSubscriptions) {
+    if (subscriptions.has(subscription)) socket.client.emit(event, payload)
   }
-}
-
-const closePollingSession = (session: PollingSession) => {
-  if (session.heartbeat) clearInterval(session.heartbeat)
-  session.pendingPoll?.finish('6')
-  pollingSessions.delete(session.id)
-}
-
-const isSocketPollingRequest = ({ request }: { request: Request }) => {
-  const url = new URL(request.url)
-  return url.pathname === appConfig.socketPath &&
-    url.searchParams.get('EIO') === '4' &&
-    url.searchParams.get('transport') === 'polling'
-}
-
-const createPollingSession = () => {
-  const session: PollingSession = {
-    id: crypto.randomUUID(),
-    packets: [],
-    subscriptions: new Set(),
-    connected: false,
-    pendingPoll: null,
-  }
-  session.heartbeat = setInterval(() => queueSocketPacket(session, '2'), 20_000)
-  pollingSessions.set(session.id, session)
-  return session
 }
 
 const confirmOrder = (orderId: string) => {
@@ -93,7 +51,7 @@ const confirmOrder = (orderId: string) => {
       version: order.version,
       status: order.status,
     }, `order:${order.id}`)
-  }, 900)
+  }, getDatabase().scenario === 'payment-pending' ? 10_000 : 900)
 }
 
 const changeNftPrice = (nftId: string) => {
@@ -107,99 +65,27 @@ const changeNftPrice = (nftId: string) => {
   return { eventId: crypto.randomUUID(), resourceId: nft.id, version: nft.version, nft: { ...nft } }
 }
 
-const handleSocketEvent = (session: PollingSession, packet: string) => {
-  let eventData: unknown
-  try {
-    eventData = JSON.parse(packet.slice(2))
-  } catch {
-    return false
-  }
-  if (!Array.isArray(eventData) || typeof eventData[0] !== 'string') return false
-  const [event, ...args] = eventData as [string, ...unknown[]]
-  if (event === 'subscribe') {
-    const [topic, resourceId] = args
-    if (topic === 'catalog') session.subscriptions.add('catalog')
+const socketHandlers = [socketLink.addEventListener('connection', (connection) => {
+  const socket = toSocketIo(connection)
+  const subscriptions = new Set<string>()
+  socketSubscriptions.set(socket, subscriptions)
+  socket.client.on('subscribe', (_event, topic, resourceId) => {
+    if (topic === 'catalog') subscriptions.add('catalog')
     if (topic === 'order' && typeof resourceId === 'string') {
       const order = getDatabase().orders.find((item) => item.id === resourceId)
       if (order && order.userId === getDatabase().currentUserId && order.status === 'pending') {
-        session.subscriptions.add(`order:${resourceId}`)
+        subscriptions.add(`order:${resourceId}`)
         confirmOrder(resourceId)
       }
     }
-  }
-  if (event === 'mock.triggerPriceChange' && typeof args[0] === 'string') {
-    const eventPayload = changeNftPrice(args[0])
-    if (eventPayload) broadcast('nft.updated', eventPayload, 'catalog')
-  }
-  return true
-}
-
-const handleEnginePacket = (session: PollingSession, packet: string) => {
-  if (packet === '40' || packet.startsWith('40{')) {
-    session.connected = true
-    queueSocketPacket(session, `40${JSON.stringify({ sid: session.id })}`)
-    return true
-  }
-  if (packet.startsWith('42')) return handleSocketEvent(session, packet)
-  if (packet === '3') return true
-  if (packet === '41' || packet === '1') {
-    closePollingSession(session)
-    return true
-  }
-  return false
-}
-
-const socketHandlers = [
-  http.get(isSocketPollingRequest, ({ request }) => {
-    const url = new URL(request.url)
-    const sessionId = url.searchParams.get('sid')
-    if (!sessionId) {
-      const session = createPollingSession()
-      return socketResponse(`0${JSON.stringify({
-        sid: session.id,
-        upgrades: [],
-        pingInterval: 20_000,
-        pingTimeout: 10_000,
-        maxPayload: 1_000_000,
-      })}`)
-    }
-    const session = pollingSessions.get(sessionId)
-    if (!session) return socketResponse('Invalid session', 400)
-    const activeSession = session
-    const queuedPacket = activeSession.packets.shift()
-    if (queuedPacket) return socketResponse(queuedPacket)
-    if (activeSession.pendingPoll) return socketResponse('6')
-    return new Promise<HttpResponse<string>>((resolve) => {
-      const timeoutId = setTimeout(onTimeout, 20_000)
-      function finish(packet: string) {
-        clearTimeout(timeoutId)
-        request.signal.removeEventListener('abort', onAbort)
-        if (activeSession.pendingPoll?.finish === finish) activeSession.pendingPoll = null
-        resolve(socketResponse(packet))
-      }
-      function onTimeout() {
-        finish('6')
-      }
-      function onAbort() {
-        finish('6')
-        closePollingSession(activeSession)
-      }
-      activeSession.pendingPoll = { finish }
-      request.signal.addEventListener('abort', onAbort, { once: true })
-      if (request.signal.aborted) onAbort()
-    })
-  }),
-  http.post(isSocketPollingRequest, async ({ request }) => {
-    const sessionId = new URL(request.url).searchParams.get('sid')
-    const session = sessionId ? pollingSessions.get(sessionId) : undefined
-    if (!session) return socketResponse('Invalid session', 400)
-    const packets = (await request.text()).split('\u001e')
-    if (packets.some((packet) => !handleEnginePacket(session, packet))) {
-      return socketResponse('Invalid Socket.IO packet', 400)
-    }
-    return socketResponse('ok')
-  }),
-]
+  })
+  socket.client.on('mock.triggerPriceChange', (_event, nftId) => {
+    if (typeof nftId !== 'string') return
+    const event = changeNftPrice(nftId)
+    if (event) broadcast('nft.updated', event, 'catalog')
+  })
+  socket.rawClient.addEventListener('close', () => socketSubscriptions.delete(socket))
+})]
 
 const errorResponse = (status: number, message: string, code: string) =>
   HttpResponse.json({ message, code }, { status })
@@ -243,9 +129,10 @@ const amountOf = (lines: CartLine[], nftId: string) =>
 const handlers = [
   http.get('/api/nfts', async ({ request }) => {
     const db = getDatabase()
-    if (db.scenario === 'slow') await delay(1_200)
-    if (db.scenario === 'failure') return errorResponse(503, 'Catálogo temporariamente indisponível.', 'SERVICE_UNAVAILABLE')
     const params = new URL(request.url).searchParams
+    if (db.scenario === 'slow') await delay(1_200)
+    if (db.scenario === 'out-of-order') await delay(params.get('q')?.toLowerCase() === 'slow' ? 1_000 : 80)
+    if (db.scenario === 'failure') return errorResponse(503, 'Catálogo temporariamente indisponível.', 'SERVICE_UNAVAILABLE')
     const search: NFTSearch = {
       q: params.get('q') ?? undefined,
       category: params.get('category') ?? undefined,
@@ -255,6 +142,7 @@ const handlers = [
       sort: (params.get('sort') as NFTSearch['sort']) ?? 'recent',
       page: Number(params.get('page') ?? 1),
     }
+    if (db.scenario === 'empty') return HttpResponse.json({ items: [], page: Math.max(1, search.page ?? 1), pageSize: 9, total: 0 })
     let items = [...db.nfts]
     if (search.q) {
       const term = search.q.toLocaleLowerCase()
@@ -503,7 +391,10 @@ const handlers = [
     return HttpResponse.json({ ok: true })
   }),
   http.put('/api/mock/scenario', async ({ request }) => {
-    const { scenario } = (await request.json()) as { scenario: 'standard' | 'payment-declined' | 'timeout-after-order' | 'session-expired' | 'slow' | 'failure' }
+    const { scenario } = (await request.json()) as { scenario: MockScenario }
+    if (!['standard', 'empty', 'out-of-order', 'slow', 'failure', 'session-expired', 'payment-pending', 'payment-declined', 'timeout-after-order'].includes(scenario)) {
+      return errorResponse(422, 'Cenário desconhecido.', 'INVALID_SCENARIO')
+    }
     getDatabase().scenario = scenario
     saveDatabase()
     return HttpResponse.json({ scenario })
@@ -513,6 +404,20 @@ const handlers = [
     if (!event) return errorResponse(404, 'NFT não encontrado.', 'NOT_FOUND')
     broadcast('nft.updated', event, 'catalog')
     return HttpResponse.json(event)
+  }),
+  http.post('/api/mock/socket-event/:id', async ({ params, request }) => {
+    const nft = getDatabase().nfts.find((item) => item.id === params.id)
+    if (!nft) return errorResponse(404, 'NFT não encontrado.', 'NOT_FOUND')
+    const { kind } = await request.json() as { kind: 'duplicate' | 'stale' }
+    const event = {
+      eventId: `test-${kind}-${nft.id}-${nft.version}`,
+      resourceId: nft.id,
+      version: kind === 'stale' ? Math.max(0, nft.version - 1) : nft.version,
+      nft: kind === 'stale' ? { ...nft, priceEth: nft.previousPriceEth ?? nft.priceEth } : { ...nft },
+    }
+    broadcast('nft.updated', event, 'catalog')
+    if (kind === 'duplicate') broadcast('nft.updated', event, 'catalog')
+    return HttpResponse.json({ eventId: event.eventId, version: event.version })
   }),
   ...socketHandlers,
 ]

@@ -1,8 +1,15 @@
 node_modules/
 dist/
 playwright-report/
+!playwright-report/
+!playwright-report/index.html
 test-results/
+.lighthouseci/
 reports/
+!reports/
+reports/*
+!reports/lighthouse/
+!reports/lighthouse/**
 .env
 .env.local
 *.tsbuildinfo

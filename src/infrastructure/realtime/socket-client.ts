@@ -16,7 +16,7 @@ export const createMarketplaceSocket = (): MarketplaceSocket =>
   io(window.location.origin, {
     path: appConfig.socketPath,
     addTrailingSlash: false,
-    transports: ['polling'],
+    transports: ['websocket'],
     autoConnect: true,
     reconnection: true,
     reconnectionDelay: 500,

@@ -285,6 +285,10 @@ O MSW é ativado por padrão. O build publicado também usa os mocks para que a 
 | `npm run audit` | Lighthouse CI desktop (3 medições por rota) |
 | `npm run audit:mobile` | Lighthouse CI mobile (3 medições por rota) |
 
+Resultados e ambiente da última auditoria: [LIGHTHOUSE.md](./LIGHTHOUSE.md). Os relatórios individuais HTML/JSON ficam em `reports/lighthouse/` e `reports/lighthouse/mobile/`.
+
+O último relatório HTML dos testes Playwright fica em `playwright-report/index.html`; traces são guardados em `test-results/` quando um teste falha.
+
 Copie `.env.example` para `.env.local` se quiser configurar o ambiente. `VITE_MOCKS=false` desativa os mocks e requer uma API compatível com os contratos descritos em [ARCHITECTURE.md](./ARCHITECTURE.md); sem essa API, a aplicação não carrega dados.
 
 ### Credenciais e cenários

@@ -4,7 +4,6 @@ import type { Order } from '../../domain/entities/Order'
 import type { User, Wallet } from '../../domain/entities/User'
 import { nftFixtures } from '../mocks/fixtures/nfts'
 import type { MockScenario } from '../mocks/database/scenarios'
-import { artwork } from '../../shared/constants/assets'
 import { storage } from './storage'
 
 export interface UserRecord extends User {
@@ -33,29 +32,13 @@ const passwordHash = (value: string): string => {
   return `demo-${(hash >>> 0).toString(16)}`
 }
 
-const shuffledArtwork = (): string[] => {
-  const images = Object.values(artwork)
-  for (let index = images.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1))
-    const image = images[index]
-    images[index] = images[randomIndex]
-    images[randomIndex] = image
-  }
-  return images
-}
-
-const withRandomArtwork = (nfts: NFT[]): NFT[] => {
-  const images = shuffledArtwork()
-  return nfts.map((nft, index) => ({ ...nft, image: images[index % images.length] }))
-}
-
 const defaultDatabase = (): MockDatabase => ({
   users: [
     { id: 'user-demo', name: 'Davi Colecionador', username: 'davi-kurio', email: 'comprador@kurio.art', walletAlias: 'Reserva', ensName: 'novak.kurio.eth', avatar: '', passwordHash: passwordHash('kurio123') },
     { id: 'user-artist', name: 'Mila Costa', username: 'mila-artist', email: 'artista@kurio.art', walletAlias: 'Principal', ensName: 'mila.kurio.eth', avatar: '', passwordHash: passwordHash('kurio123') },
   ],
   currentUserId: null,
-  nfts: withRandomArtwork(nftFixtures),
+  nfts: [...nftFixtures],
   favorites: {},
   carts: {},
   coupons: { KURIO10: 10 },
@@ -66,16 +49,13 @@ const defaultDatabase = (): MockDatabase => ({
 })
 
 let database = storage.get<MockDatabase>('database', defaultDatabase())
-const currentArtwork = new Set(Object.values(artwork))
-const outdatedNFTs = database.nfts.filter((nft) => !currentArtwork.has(nft.image))
+const fixtureImages = new Map(nftFixtures.map((nft) => [nft.id, nft.image]))
+const outdatedNFTs = database.nfts.filter((nft) => fixtureImages.has(nft.id) && fixtureImages.get(nft.id) !== nft.image)
 if (outdatedNFTs.length > 0) {
-  const images = shuffledArtwork()
-  let imageIndex = 0
-  database.nfts = database.nfts.map((nft) =>
-    currentArtwork.has(nft.image)
-      ? nft
-      : { ...nft, image: images[imageIndex++ % images.length] },
-  )
+  database.nfts = database.nfts.map((nft) => {
+    const image = fixtureImages.get(nft.id)
+    return image ? { ...nft, image } : nft
+  })
   storage.set('database', database)
 }
 
